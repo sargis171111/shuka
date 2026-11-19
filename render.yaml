@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: shuka-marketplace
+    runtime: node
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/categories
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /var/data
+      - key: SESSION_SECRET
+        generateValue: true
+    disk:
+      name: shuka-data
+      mountPath: /var/data
+      sizeGB: 1
