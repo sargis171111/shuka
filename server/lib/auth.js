@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { IS_PROD, SESSION_SECRET, SESSION_TTL_MS } from '../config.js';
+import { IS_HTTPS, SESSION_SECRET, SESSION_TTL_MS } from '../config.js';
 import { getDb } from '../db/connection.js';
 import { AppError } from './errors.js';
 
@@ -56,7 +56,7 @@ export function setSessionCookie(res, userId) {
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: IS_PROD,
+    secure: IS_HTTPS,
     path: '/',
     maxAge: SESSION_TTL_MS,
   });
@@ -66,7 +66,7 @@ export function clearSessionCookie(res) {
   res.clearCookie(COOKIE_NAME, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: IS_PROD,
+    secure: IS_HTTPS,
     path: '/',
   });
 }

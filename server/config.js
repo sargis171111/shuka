@@ -8,13 +8,16 @@ export const ROOT_DIR = path.resolve(__dirname, '..');
 export const PORT = Number(process.env.PORT || 3000);
 export const NODE_ENV = process.env.NODE_ENV || 'development';
 export const IS_PROD = NODE_ENV === 'production';
+export const IS_NETLIFY = Boolean(process.env.NETLIFY);
+export const IS_HTTPS = IS_PROD || IS_NETLIFY;
 
-export const DATA_DIR = path.resolve(ROOT_DIR, process.env.DATA_DIR || './data');
+const DEFAULT_DATA_DIR = IS_NETLIFY ? '/tmp/shuka-data' : './data';
+export const DATA_DIR = path.resolve(ROOT_DIR, process.env.DATA_DIR || DEFAULT_DATA_DIR);
 export const DB_PATH = path.join(DATA_DIR, 'shuka.db');
 export const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 export const BACKUPS_DIR = path.join(DATA_DIR, 'backups');
 
-if (IS_PROD && !process.env.SESSION_SECRET) {
+if (IS_PROD && !IS_NETLIFY && !process.env.SESSION_SECRET) {
   throw new Error('SESSION_SECRET environment variable is required in production');
 }
 

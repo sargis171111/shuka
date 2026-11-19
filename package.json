@@ -15,6 +15,7 @@
     "test:break-it": "node scripts/break-it.mjs"
   },
   "dependencies": {
+    "@netlify/server": "^0.1.6",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "bcryptjs": "^3.0.3",

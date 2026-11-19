@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import { PORT, ROOT_DIR, UPLOADS_DIR } from './config.js';
@@ -14,7 +15,16 @@ import cartRoutes from './routes/cart.js';
 import orderRoutes from './routes/orders.js';
 import sellerRoutes from './routes/seller.js';
 
-export function createApp() {
+const __filename = fileURLToPath(import.meta.url);
+
+export async function initDatabase() {
+  const db = getDb();
+  runMigrations(db);
+  await seedIfEmpty(db);
+  return db;
+}
+
+export function createApp({ distDir, indexHtmlPath } = {}) {
   const app = express();
   app.set('trust proxy', 1);
 
@@ -47,18 +57,29 @@ export function createApp() {
     });
   });
 
-  const distDir = path.join(ROOT_DIR, 'dist');
-  const indexHtmlPath = path.join(distDir, 'index.html');
-  if (fs.existsSync(distDir)) {
-    app.use(express.static(distDir));
+  const resolvedDistDir =
+    [distDir, path.join(ROOT_DIR, 'dist'), path.resolve(process.cwd(), 'dist')].find(
+      (candidate) => candidate && fs.existsSync(candidate)
+    ) || null;
+
+  const resolvedIndexPath =
+    [
+      indexHtmlPath,
+      resolvedDistDir ? path.join(resolvedDistDir, 'index.html') : null,
+      path.join(ROOT_DIR, 'dist/index.html'),
+      path.resolve(process.cwd(), 'dist/index.html'),
+    ].find((candidate) => candidate && fs.existsSync(candidate)) || null;
+
+  if (resolvedDistDir) {
+    app.use(express.static(resolvedDistDir));
+  }
+
+  if (resolvedIndexPath) {
     app.get('*', (req, res, next) => {
       if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
         return next();
       }
-      if (fs.existsSync(indexHtmlPath)) {
-        return res.sendFile(indexHtmlPath);
-      }
-      return next();
+      return res.sendFile(resolvedIndexPath);
     });
   }
 
@@ -67,9 +88,7 @@ export function createApp() {
 }
 
 async function start() {
-  const db = getDb();
-  runMigrations(db);
-  await seedIfEmpty(db);
+  await initDatabase();
 
   const app = createApp();
   const server = app.listen(PORT, () => {
@@ -86,7 +105,9 @@ async function start() {
   process.on('SIGTERM', shutdown);
 }
 
-start().catch((err) => {
-  console.error('[shuka] Failed to start server:', err);
-  process.exit(1);
-});
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+  start().catch((err) => {
+    console.error('[shuka] Failed to start server:', err);
+    process.exit(1);
+  });
+}
