@@ -1,13 +1,23 @@
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import bcrypt from 'bcryptjs';
-import sharp from 'sharp';
-import { UPLOADS_DIR } from '../config.js';
+import { ROOT_DIR, UPLOADS_DIR } from '../config.js';
 import { getDb, closeDb, ensureDataDirs } from './connection.js';
 import { runMigrations } from './migrate.js';
 
-const __filename = fileURLToPath(import.meta.url);
+const seedRequire = createRequire(import.meta.url);
+function getSharp() {
+  if (process.env.NETLIFY) return null;
+  try {
+    return seedRequire(['sh', 'arp'].join(''));
+  } catch {
+    return null;
+  }
+}
+
+const seedFile = fileURLToPath(import.meta.url);
 
 const CATEGORIES = [
   { name: 'Electronics', slug: 'electronics' },
@@ -456,6 +466,28 @@ async function generateSeedProductImages(index, product, categoryName) {
     return largeName;
   }
 
+  // Copy pre-generated static WebP assets if present (e.g. serverless / Netlify runtime)
+  const staticDirs = [
+    path.join(ROOT_DIR, 'dist/uploads'),
+    path.join(ROOT_DIR, 'public/uploads'),
+    path.resolve(process.cwd(), 'dist/uploads'),
+    path.resolve(process.cwd(), 'public/uploads'),
+  ];
+  for (const dir of staticDirs) {
+    const srcLarge = path.join(dir, largeName);
+    const srcThumb = path.join(dir, thumbName);
+    if (fs.existsSync(srcLarge) && fs.existsSync(srcThumb)) {
+      fs.copyFileSync(srcLarge, largePath);
+      fs.copyFileSync(srcThumb, thumbPath);
+      return largeName;
+    }
+  }
+
+  const sharp = getSharp();
+  if (!sharp) {
+    return largeName;
+  }
+
   const theme = PALETTE[product.categorySlug] || PALETTE.electronics;
   const lines = wrapLines(product.title, 24, 3);
   const priceText = `${product.price_amd.toLocaleString('en-US')} AMD`;
@@ -718,7 +750,7 @@ export async function seedIfEmpty(db = getDb()) {
   return false;
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+if (process.argv[1] && path.resolve(process.argv[1]) === seedFile) {
   (async () => {
     try {
       const db = getDb();

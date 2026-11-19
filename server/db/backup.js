@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { BACKUPS_DIR } from '../config.js';
 import { getDb, closeDb } from './connection.js';
 
-const __filename = fileURLToPath(import.meta.url);
+const backupFile = fileURLToPath(import.meta.url);
 
 export function createBackup(targetPath) {
   const db = getDb();
@@ -22,7 +22,7 @@ export function createBackup(targetPath) {
   return { path: dest, size: stats.size };
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+if (process.argv[1] && path.resolve(process.argv[1]) === backupFile) {
   try {
     createBackup(process.argv[2]);
   } finally {

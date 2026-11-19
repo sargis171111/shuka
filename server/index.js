@@ -15,7 +15,7 @@ import cartRoutes from './routes/cart.js';
 import orderRoutes from './routes/orders.js';
 import sellerRoutes from './routes/seller.js';
 
-const __filename = fileURLToPath(import.meta.url);
+const indexFile = fileURLToPath(import.meta.url);
 
 export async function initDatabase() {
   const db = getDb();
@@ -105,7 +105,7 @@ async function start() {
   process.on('SIGTERM', shutdown);
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+if (process.argv[1] && path.resolve(process.argv[1]) === indexFile) {
   start().catch((err) => {
     console.error('[shuka] Failed to start server:', err);
     process.exit(1);

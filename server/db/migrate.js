@@ -3,8 +3,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getDb, closeDb } from './connection.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const migrateFile = fileURLToPath(import.meta.url);
+const migrateDir = path.dirname(migrateFile);
 
 const EMBEDDED_001_INIT_SQL = `
 CREATE TABLE IF NOT EXISTS users (
@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS reviews (
 
 function resolveMigrationsDir() {
   const candidates = [
-    path.resolve(__dirname, '../migrations'),
+    path.resolve(migrateDir, '../migrations'),
     path.resolve(process.cwd(), 'server/migrations'),
   ];
   return candidates.find((dir) => fs.existsSync(dir)) || null;
@@ -158,7 +158,7 @@ export function runMigrations(db = getDb()) {
   return applied;
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+if (process.argv[1] && path.resolve(process.argv[1]) === migrateFile) {
   try {
     const db = getDb();
     const applied = runMigrations(db);

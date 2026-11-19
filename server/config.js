@@ -1,9 +1,13 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-export const ROOT_DIR = path.resolve(__dirname, '..');
+const configFile = fileURLToPath(import.meta.url);
+const configDir = path.dirname(configFile);
+const candidateRoot = path.resolve(configDir, '..');
+export const ROOT_DIR = fs.existsSync(path.join(candidateRoot, 'package.json'))
+  ? candidateRoot
+  : process.cwd();
 
 export const PORT = Number(process.env.PORT || 3000);
 export const NODE_ENV = process.env.NODE_ENV || 'development';
